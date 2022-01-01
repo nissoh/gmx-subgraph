@@ -1,0 +1,188 @@
+enum PricePeriod {
+  any
+  last
+}
+
+type UniswapPrice @entity {
+  id: ID!
+  token: String!
+  value: BigInt!
+  timestamp: Int!
+  period: PricePeriod!
+}
+
+
+type ChainlinkPrice @entity {
+  id: ID!
+  token: String!
+  value: BigInt!
+  timestamp: Int!
+  period: PricePeriod!
+}
+
+type Transaction @entity {
+  id: ID!
+  blockNumber: Int!
+  timestamp: Int!
+  from: String!
+  to: String
+}
+
+type StakeGmx @entity {
+  id: ID!
+
+  account: String!
+  token: String!
+  amount: BigInt!
+
+  transaction: Transaction!
+  timestamp: Int!
+}
+
+type UnstakeGmx @entity {
+  id: ID!
+
+  account: String!
+  token: String!
+  amount: BigInt!
+
+  transaction: Transaction!
+  timestamp: Int!
+}
+
+type StakeGlp @entity {
+  id: ID!
+
+  account: String!
+  amount: BigInt!
+
+  transaction: Transaction!
+  timestamp: Int!
+}
+
+type UnstakeGlp @entity {
+  id: ID!
+
+  account: String!
+  amount: BigInt!
+
+  transaction: Transaction!
+  timestamp: Int!
+}
+
+
+type StakedGmxTrackerTransfer @entity {
+  id: ID!
+
+  timestamp: Int!
+
+  from: String!
+  to: String!
+  value: BigInt!
+}
+
+type StakedGlpTrackerTransfer @entity {
+  id: ID!
+
+  timestamp: Int!
+
+  from: String!
+  to: String!
+  value: BigInt!
+}
+
+
+
+type BonusGmxTrackerTransfer @entity {
+  id: ID!
+
+  timestamp: Int!
+
+  from: String!
+  to: String!
+  value: BigInt!
+}
+
+
+type FeeGmxTrackerTransfer @entity {
+  id: ID!
+
+  timestamp: Int!
+
+  from: String!
+  to: String!
+  value: BigInt!
+}
+
+
+type FeeGlpTrackerTransfer @entity {
+  id: ID!
+
+  timestamp: Int!
+
+  from: String!
+  to: String!
+  value: BigInt!
+}
+type FeeGlpTrackerClaim @entity {
+  id: ID!
+  timestamp: Int!
+
+  receiver: String!
+  amount: BigInt!
+}
+
+type FeeGmxTrackerClaim @entity {
+  id: ID!
+  timestamp: Int!
+
+  receiver: String!
+  amount: BigInt!
+}
+type StakedGlpTrackerClaim @entity {
+  id: ID!
+  timestamp: Int!
+
+  receiver: String!
+  amount: BigInt!
+}
+
+type StakedGmxTrackerClaim @entity {
+  id: ID!
+  timestamp: Int!
+
+  receiver: String!
+  amount: BigInt!
+}
+
+type GmxVester @entity {
+  id: ID!
+
+  timestamp: Int!
+
+  from: String!
+  to: String!
+  value: BigInt!
+}
+
+type DailyClaimedReward @entity {
+  id: ID!
+  receiver: String!
+
+  timestamp: Int!
+
+  feeGlp: BigInt!
+  feeGlpUsd: BigInt!
+
+  feeGmx: BigInt!
+  feeGmxUsd: BigInt!
+
+  stakeGlp: BigInt!
+  stakeGlpUsd: BigInt!
+  stakeGmx: BigInt!
+  stakeGmxUsd: BigInt!
+
+  totalUsd: BigInt!
+}
+
+
