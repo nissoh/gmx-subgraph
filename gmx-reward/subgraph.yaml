@@ -18,15 +18,9 @@ dataSources:
         - UnstakeGmx
         - StakeGlp
         - UnstakeGlp
-        - ChainlinkPrice
-        - UniswapPrice
       abis:
         - name: RewardRouterV2
           file: ./abis/RewardRouterV2.json
-        - name: ChainlinkAggregator
-          file: ./abis/ChainlinkAggregator.json
-        - name: UniswapPoolV3
-          file: ./abis/UniswapPoolV3.json
       eventHandlers:
         - event: StakeGmx(address,address,uint256)
           handler: handleStakeGmx
@@ -153,3 +147,44 @@ dataSources:
         - event: Claim(address,uint256)
           handler: handleFeeGlpTrackerClaim
       file: ./src/mapping.ts
+
+  - kind: ethereum/contract
+    name: ChainlinkAggregatorETH
+    network: arbitrum-one
+    source:
+      address: "0x3607e46698d218B3a5Cae44bF381475C0a5e2ca7"
+      abi: ChainlinkAggregator
+      startBlock: 4042970
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - ChainlinkPrice
+      abis:
+        - name: ChainlinkAggregator
+          file: ./abis/ChainlinkAggregator.json
+      eventHandlers:
+        - event: AnswerUpdated(indexed int256,indexed uint256,uint256)
+          handler: handleAnswerUpdatedETH
+      file: ./src/pricesMapping.ts
+  - kind: ethereum/contract
+    name: UniswapPool
+    network: arbitrum-one
+    source:
+      address: "0x80A9ae39310abf666A87C743d6ebBD0E8C42158E"
+      abi: UniswapPoolV3
+      startBlock: 4042970
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - UniswapPrice
+      abis:
+        - name: UniswapPoolV3
+          file: ./abis/UniswapPoolV3.json
+      eventHandlers:
+        - event: Swap(indexed address,indexed address,int256,int256,uint160,uint128,int24)
+          handler: handleUniswapGmxEthSwap
+      file: ./src/pricesMapping.ts
