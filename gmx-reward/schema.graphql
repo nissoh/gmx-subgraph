@@ -14,13 +14,23 @@ enum FeedAddress {
   _0x82af49447d8a07e3bd95bd0d56f35241523fbab1 # WETH
 }
 
-type Pricefeed @entity {
+type PricefeedHistory @entity {
+  id: ID!
+  timestamp: Int!
+
+  o:  BigInt! # open
+  h:  BigInt! # high
+  l:  BigInt! # low
+  c:  BigInt! # close
+
+  feed: FeedAddress!
+  interval: IntervalTime!
+}
+
+type PricefeedLatest @entity {
   id: ID!
   value: BigInt!
   timestamp: Int!
-
-  feed: FeedAddress!
-  period: IntervalTime!
 }
 
 type Transaction @entity {

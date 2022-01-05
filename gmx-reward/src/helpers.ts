@@ -1,8 +1,6 @@
-import { BigInt, ethereum, TypedMap } from "@graphprotocol/graph-ts"
-import {
-  Pricefeed,
-  Transaction
-} from "../generated/schema"
+import { BigInt, ethereum } from "@graphprotocol/graph-ts"
+import { Transaction, PricefeedLatest, PricefeedHistory } from "../generated/schema"
+import { getIntervalId, getIntervalIdentifier } from "./interval"
 
 export const BASIS_POINTS_DIVISOR = BigInt.fromI32(10000)
 export const PRECISION = BigInt.fromI32(10).pow(30)
@@ -29,6 +27,58 @@ export const DAI = "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"
 export const GMX = "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"
 export const GLP = "0x321F653eED006AD1C29D174e17d96351BDe22649"
 
+
+
+
+// export enum PriceFeedAddress {
+//     WETH = 0x82af49447d8a07e3bd95bd0d56f35241523fbab1,
+//     BTC = 0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f,
+//     LINK = 0xf97f4df75117a78c1a5a0dbb814af92458539fb4,
+//     UNI = 0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0,
+//     USDT = 0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9,
+//     USDC = 0xff970a61a04b1ca14834a43f5de4533ebddb5cc8,
+//     MIM = 0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a,
+//     SPELL = 0x3e6648c5a70a150a88bce65f4ad4d506fe15d2af,
+//     SUSHI = 0xd4d42f0b6def4ce0383636770ef773390d85c61a,
+//     FRAX = 0x17fc002b466eec40dae837fc4be5c67993ddbd6f,
+//     DAI = 0xda10009cbd5d07dd0cecc66161fc93d7c9000da1,
+//     GMX = 0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a,
+//     GLP = 0x321F653eED006AD1C29D174e17d96351BDe22649,
+// }
+
+// export class PriceFeedAddress {
+//   static USDC = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
+//   static USDT = "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f"
+//   static BTC = "0xf97f4df75117a78c1a5a0dbb814af92458539fb4"
+//   static WETH = "0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0"
+//   static LINK = "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9"
+//   static UNI = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8"
+//   static MIM = "0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a"
+//   static SPELL = "0x3e6648c5a70a150a88bce65f4ad4d506fe15d2af"
+//   static SUSHI = "0xd4d42f0b6def4ce0383636770ef773390d85c61a"
+//   static FRAX = "0x17fc002b466eec40dae837fc4be5c67993ddbd6f"
+//   static DAI = "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"
+//   static GMX = "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"
+//   static GLP = "0x321F653eED006AD1C29D174e17d96351BDe22649"
+// }
+
+export enum TokenDecimals {
+  USDC = 6,
+  USDT = 6,
+  BTC = 8,
+  WETH = 18,
+  LINK = 18,
+  UNI = 18,
+  MIM = 18,
+  SPELL = 18,
+  SUSHI = 18,
+  FRAX = 18,
+  DAI = 18,
+  GMX = 18,
+  GLP = 18,
+}
+
+
 export enum intervalUnixTime {
     SEC = 1,
     SEC60 = 60,
@@ -51,65 +101,37 @@ export function timestampToDay(timestamp: BigInt): BigInt {
   return BigInt.fromI32(86400).times(BigInt.fromI32(86400)).div(timestamp)
 }
 
-export function getTokenDecimals(token: string): u8 {
-  let tokenDecimals = new Map<string, i32>()
-  tokenDecimals.set(WETH, 18)
-  tokenDecimals.set(BTC, 8)
-  tokenDecimals.set(LINK, 18)
-  tokenDecimals.set(UNI, 18)
-  tokenDecimals.set(USDC, 6)
-  tokenDecimals.set(USDT, 6)
-  tokenDecimals.set(MIM, 18)
-  tokenDecimals.set(SPELL, 18)
-  tokenDecimals.set(SUSHI, 18)
-  tokenDecimals.set(FRAX, 18)
-  tokenDecimals.set(DAI, 18)
-  tokenDecimals.set(GMX, 18)
 
-  return tokenDecimals.get(token) as u8
+
+export function getEthTokenAmountUsd(amount: BigInt): BigInt {
+  const denominator = BigInt.fromI32(10).pow(18)
+  const price = getTokenPrice(WETH)
+  return amount.times(price).div(denominator)
 }
 
-export function getTokenAmountUsd(token: string, amount: BigInt): BigInt {
-  let decimals = getTokenDecimals(token)
-  let denominator = BigInt.fromI32(10).pow(decimals)
-  let price = getTokenPrice(token)
+export function getGmxTokenAmountUsd(amount: BigInt): BigInt {
+  const denominator = BigInt.fromI32(10).pow(18)
+  const price = getTokenPrice(GMX)
   return amount.times(price).div(denominator)
 }
 
 
-export function getTokenPrice(token: string): BigInt {
-  if (token !== GMX) {
-    let chainlinkPriceEntity = Pricefeed.load(token)
-    if (chainlinkPriceEntity !== null) {
-      // all chainlink prices have 8 decimals
-      // adjusting them to fit GMX 30 decimals USD values
-      return chainlinkPriceEntity.value.times(NormalizedChainLinkMultiplier)
-    }
+export function getTokenPrice(feedAddress: string): BigInt {
+  const chainlinkPriceEntity = PricefeedLatest.load(feedAddress)
+
+  if (chainlinkPriceEntity == null) {
+    throw new Error(`could not get pricefeed: ${feedAddress}`)
   }
 
-  if (token === GMX) {
-    let uniswapPriceEntity = Pricefeed.load(GMX)
+  return chainlinkPriceEntity.value
 
-    if (uniswapPriceEntity !== null) {
-      return uniswapPriceEntity.value
-    }
-  }
+  // if (feedAddress === GMX || feedAddress === GLP) {
+  //   return chainlinkPriceEntity.value
+  // }
 
-  let prices = new TypedMap<String, BigInt>()
-  prices.set(WETH, BigInt.fromI32(3350).times(PRECISION))
-  prices.set(BTC, BigInt.fromI32(45000).times(PRECISION))
-  prices.set(LINK, BigInt.fromI32(25).times(PRECISION))
-  prices.set(UNI, BigInt.fromI32(23).times(PRECISION))
-  prices.set(USDC, PRECISION)
-  prices.set(USDT, PRECISION)
-  prices.set(MIM, PRECISION)
-  prices.set(SPELL, PRECISION.div(BigInt.fromI32(50))) // ~2 cents
-  prices.set(SUSHI, BigInt.fromI32(10).times(PRECISION))
-  prices.set(FRAX, PRECISION)
-  prices.set(DAI, PRECISION)
-  prices.set(GMX, BigInt.fromI32(30).times(PRECISION))
-
-  return prices.get(token) as BigInt
+  // // all chainlink prices have 8 decimals
+  // // adjusting them to fit GMX 30 decimals USD values
+  // return chainlinkPriceEntity.value.times(NormalizedChainLinkMultiplier)
 }
 
 
@@ -145,3 +167,50 @@ export function _createTransactionIfNotExist(event: ethereum.Event): string {
 
   return id
 }
+
+
+export function _storeLatestPricefeed(feedAddress: string, price: BigInt, timestamp: i32): PricefeedLatest {
+  let feed = PricefeedLatest.load(feedAddress)
+  if (feed === null) {
+    feed = new PricefeedLatest(feedAddress)
+    feed.timestamp = timestamp
+  }
+  feed.value = price
+  feed.save()
+
+  return feed
+}
+
+
+
+export function _storePricefeed(event: ethereum.Event, feedAddress: string, interval: intervalUnixTime, price: BigInt): void {
+  const intervalID = getIntervalId(interval, event)
+  const id = getIntervalIdentifier(event, feedAddress, interval)
+
+
+  let entity = PricefeedHistory.load(id)
+  if (entity == null) {
+    entity = new PricefeedHistory(id)
+
+    entity.interval = '_' + interval.toString()
+    entity.feed = '_' + feedAddress
+    entity.timestamp = intervalID * interval
+    entity.o = price
+    entity.h = price
+    entity.l = price
+  }
+
+  if (price > entity.h) {
+    entity.h = price
+  }
+
+  if (price < entity.l) {
+    entity.l = price
+  }
+
+  entity.c = price
+
+  entity.save()
+}
+
+

@@ -17,7 +17,7 @@ import {
   FeeGmxTrackerClaim,
   FeeGlpTrackerClaim,
 } from "../generated/schema"
-import { getTokenAmountUsd, GMX, WETH } from "./helpers"
+import { getEthTokenAmountUsd, getGmxTokenAmountUsd } from "./helpers"
 // import { getDailyRewardClaim } from "./interval"
 
 
@@ -170,7 +170,7 @@ export function handleFeeGlpTrackerClaim(event: rewardTracker.Claim): void {
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
-  entity.amountUsd = getTokenAmountUsd(WETH, event.params.amount)
+  entity.amountUsd = getEthTokenAmountUsd(event.params.amount)
   entity.timestamp = event.block.timestamp.toI32()
 
   entity.save()
@@ -181,7 +181,7 @@ export function handleFeeGmxTrackerClaim(event: rewardTracker.Claim): void {
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
-  entity.amountUsd = getTokenAmountUsd(WETH, event.params.amount)
+  entity.amountUsd = getEthTokenAmountUsd(event.params.amount)
   entity.timestamp = event.block.timestamp.toI32()
 
   entity.save()
@@ -193,7 +193,7 @@ export function handleStakedGlpTrackerClaim(event: rewardTracker.Claim): void {
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
-  entity.amountUsd = getTokenAmountUsd(GMX, event.params.amount)
+  entity.amountUsd = getGmxTokenAmountUsd(event.params.amount)
   entity.timestamp = event.block.timestamp.toI32()
 
   entity.save()
@@ -205,7 +205,7 @@ export function handleStakedGmxTrackerClaim(event: rewardTracker.Claim): void {
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
-  entity.amountUsd = getTokenAmountUsd(GMX, event.params.amount)
+  entity.amountUsd = getGmxTokenAmountUsd(event.params.amount)
   entity.timestamp = event.block.timestamp.toI32()
 
   entity.save()
