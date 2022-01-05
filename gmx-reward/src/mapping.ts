@@ -18,7 +18,7 @@ import {
   FeeGlpTrackerClaim,
 } from "../generated/schema"
 import { getTokenAmountUsd, GMX, WETH } from "./helpers"
-import { getDailyRewardClaim } from "./interval"
+// import { getDailyRewardClaim } from "./interval"
 
 
 function getId(event: ethereum.Event): string {
@@ -165,67 +165,48 @@ export function handleStakedGlpTrackerTransfer(event: rewardTracker.Transfer): v
 
 
 export function handleFeeGlpTrackerClaim(event: rewardTracker.Claim): void {
-  let id = getId(event)
-  let entity = new FeeGlpTrackerClaim(id)
+  const id = getId(event)
+  const entity = new FeeGlpTrackerClaim(id)
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
+  entity.amountUsd = getTokenAmountUsd(WETH, event.params.amount)
   entity.timestamp = event.block.timestamp.toI32()
 
-  const dayData = getDailyRewardClaim(event)
-  dayData.feeGlp = event.params.amount
-  dayData.feeGlpUsd.plus(getTokenAmountUsd(WETH, event.params.amount))
-  dayData.totalUsd.plus(dayData.feeGlpUsd)
-
-  dayData.save()
   entity.save()
 }
 export function handleFeeGmxTrackerClaim(event: rewardTracker.Claim): void {
-  let id = getId(event)
-  let entity = new FeeGmxTrackerClaim(id)
+  const id = getId(event)
+  const entity = new FeeGmxTrackerClaim(id)
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
+  entity.amountUsd = getTokenAmountUsd(WETH, event.params.amount)
   entity.timestamp = event.block.timestamp.toI32()
 
-  const dayData = getDailyRewardClaim(event)
-  dayData.feeGmx = event.params.amount
-  dayData.feeGmxUsd.plus(getTokenAmountUsd(WETH, event.params.amount))
-  dayData.totalUsd.plus(dayData.feeGmxUsd)
-
-  dayData.save()
   entity.save()
 }
 
 export function handleStakedGlpTrackerClaim(event: rewardTracker.Claim): void {
-  let id = getId(event)
-  let entity = new StakedGlpTrackerClaim(id)
+  const id = getId(event)
+  const entity = new StakedGlpTrackerClaim(id)
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
+  entity.amountUsd = getTokenAmountUsd(GMX, event.params.amount)
   entity.timestamp = event.block.timestamp.toI32()
 
-  const dayData = getDailyRewardClaim(event)
-  dayData.stakeGlp = event.params.amount
-  dayData.stakeGlpUsd.plus(getTokenAmountUsd(GMX, event.params.amount))
-  dayData.totalUsd.plus(dayData.stakeGlpUsd)
-
-  dayData.save()
   entity.save()
 }
+
 export function handleStakedGmxTrackerClaim(event: rewardTracker.Claim): void {
-  let id = getId(event)
-  let entity = new StakedGmxTrackerClaim(id)
+  const id = getId(event)
+  const entity = new StakedGmxTrackerClaim(id)
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
+  entity.amountUsd = getTokenAmountUsd(GMX, event.params.amount)
   entity.timestamp = event.block.timestamp.toI32()
 
-  const dayData = getDailyRewardClaim(event)
-  dayData.stakeGmx = event.params.amount
-  dayData.stakeGmxUsd.plus(getTokenAmountUsd(GMX, event.params.amount))
-  dayData.totalUsd.plus(dayData.stakeGmxUsd)
-
-  dayData.save()
   entity.save()
 }

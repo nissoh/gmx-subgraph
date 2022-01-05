@@ -8,7 +8,7 @@ dataSources:
     source:
       address: "0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1"
       abi: RewardRouterV2
-      startBlock: 4042970
+      startBlock: 3573043
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -38,7 +38,7 @@ dataSources:
     source:
       address: "0x908C4D94D34924765f1eDc22A1DD098397c59dD4"
       abi: RewardTracker
-      startBlock: 4042970
+      startBlock: 3573043
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -61,7 +61,7 @@ dataSources:
     source:
       address: "0x1aDDD80E6039594eE970E5872D247bf0414C8903"
       abi: RewardTracker
-      startBlock: 4042970
+      startBlock: 3573043
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -86,7 +86,7 @@ dataSources:
     source:
       address: "0x4d268a7d4C16ceB5a606c173Bd974984343fea13"
       abi: RewardTracker
-      startBlock: 4042970
+      startBlock: 3573043
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -107,7 +107,7 @@ dataSources:
     source:
       address: "0xd2D1162512F927a7e282Ef43a362659E4F2a728F"
       abi: RewardTracker
-      startBlock: 4042970
+      startBlock: 3573043
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -130,7 +130,7 @@ dataSources:
     source:
       address: "0x4e971a87900b931fF39d1Aad67697F49835400b6"
       abi: RewardTracker
-      startBlock: 4042970
+      startBlock: 3573043
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -154,13 +154,13 @@ dataSources:
     source:
       address: "0x3607e46698d218B3a5Cae44bF381475C0a5e2ca7"
       abi: ChainlinkAggregator
-      startBlock: 4042970
+      startBlock: 3573043
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
       language: wasm/assemblyscript
       entities:
-        - ChainlinkPrice
+        - Pricefeed
       abis:
         - name: ChainlinkAggregator
           file: ./abis/ChainlinkAggregator.json
@@ -169,22 +169,44 @@ dataSources:
           handler: handleAnswerUpdatedETH
       file: ./src/pricesMapping.ts
   - kind: ethereum/contract
-    name: UniswapPool
+    name: GmxPrice
     network: arbitrum-one
     source:
       address: "0x80A9ae39310abf666A87C743d6ebBD0E8C42158E"
       abi: UniswapPoolV3
-      startBlock: 4042970
+      startBlock: 3573043
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
       language: wasm/assemblyscript
       entities:
-        - UniswapPrice
+        - Pricefeed
       abis:
         - name: UniswapPoolV3
           file: ./abis/UniswapPoolV3.json
       eventHandlers:
         - event: Swap(indexed address,indexed address,int256,int256,uint160,uint128,int24)
           handler: handleUniswapGmxEthSwap
+      file: ./src/pricesMapping.ts
+  - kind: ethereum/contract
+    name: GlpManager
+    network: arbitrum-one
+    source:
+      address: "0x321F653eED006AD1C29D174e17d96351BDe22649"
+      abi: GlpManager
+      startBlock: 3573043
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Pricefeed
+      abis:
+        - name: GlpManager
+          file: ./abis/GlpManager.json
+      eventHandlers:
+        - event: AddLiquidity(address,address,uint256,uint256,uint256,uint256,uint256)
+          handler: handleAddLiquidity
+        - event: RemoveLiquidity(address,address,uint256,uint256,uint256,uint256,uint256)
+          handler: handleRemoveLiquidity
       file: ./src/pricesMapping.ts

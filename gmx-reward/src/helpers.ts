@@ -1,18 +1,18 @@
 import { BigInt, ethereum, TypedMap } from "@graphprotocol/graph-ts"
 import {
-  ChainlinkPrice,
-  Transaction,
-  UniswapPrice
+  Pricefeed,
+  Transaction
 } from "../generated/schema"
 
-export let BASIS_POINTS_DIVISOR = BigInt.fromI32(10000)
-export let PRECISION = BigInt.fromI32(10).pow(30)
+export const BASIS_POINTS_DIVISOR = BigInt.fromI32(10000)
+export const PRECISION = BigInt.fromI32(10).pow(30)
 
-export let ZERO_BI = BigInt.fromI32(0)
-export let ONE_BI = BigInt.fromI32(1)
-export let ZERO_BD = BigInt.fromString('0')
-export let ONE_BD = BigInt.fromString('1')
-export let BI_18 = BigInt.fromI32(18)
+export const ZERO_BI = BigInt.fromI32(0)
+export const ONE_BI = BigInt.fromI32(1)
+export const ZERO_BD = BigInt.fromString('0')
+export const ONE_BD = BigInt.fromString('1')
+export const BI_18 = BigInt.fromI32(18)
+export const NormalizedChainLinkMultiplier = BigInt.fromI32(10).pow(22)
 
 
 export const WETH = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
@@ -27,6 +27,25 @@ export const SUSHI = "0xd4d42f0b6def4ce0383636770ef773390d85c61a"
 export const FRAX = "0x17fc002b466eec40dae837fc4be5c67993ddbd6f"
 export const DAI = "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"
 export const GMX = "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"
+export const GLP = "0x321F653eED006AD1C29D174e17d96351BDe22649"
+
+export enum intervalUnixTime {
+    SEC = 1,
+    SEC60 = 60,
+    MIN5 = 300,
+    MIN15 = 900,
+    MIN30 = 1800,
+    MIN60 = 3600,
+    HR2 = 7200,
+    HR4 = 14400,
+    HR8 = 28800,
+    HR24 = 86400,
+    DAY7 = 604800,
+    MONTH = 2628000,
+    MONTH2 = 5256000
+}
+
+
 
 export function timestampToDay(timestamp: BigInt): BigInt {
   return BigInt.fromI32(86400).times(BigInt.fromI32(86400)).div(timestamp)
@@ -58,10 +77,9 @@ export function getTokenAmountUsd(token: string, amount: BigInt): BigInt {
 }
 
 
-const NormalizedChainLinkMultiplier = BigInt.fromI32(10).pow(22)
 export function getTokenPrice(token: string): BigInt {
   if (token !== GMX) {
-    let chainlinkPriceEntity = ChainlinkPrice.load(token)
+    let chainlinkPriceEntity = Pricefeed.load(token)
     if (chainlinkPriceEntity !== null) {
       // all chainlink prices have 8 decimals
       // adjusting them to fit GMX 30 decimals USD values
@@ -70,7 +88,7 @@ export function getTokenPrice(token: string): BigInt {
   }
 
   if (token === GMX) {
-    let uniswapPriceEntity = UniswapPrice.load(GMX)
+    let uniswapPriceEntity = Pricefeed.load(GMX)
 
     if (uniswapPriceEntity !== null) {
       return uniswapPriceEntity.value

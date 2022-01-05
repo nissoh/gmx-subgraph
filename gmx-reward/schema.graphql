@@ -1,23 +1,26 @@
-enum PricePeriod {
-  any
-  last
-}
-
-type UniswapPrice @entity {
-  id: ID!
-  token: String!
-  value: BigInt!
-  timestamp: Int!
-  period: PricePeriod!
+enum IntervalTime {
+  _1
+  _900
+  _3600
+  _14400
+  _86400
+  _604800
 }
 
 
-type ChainlinkPrice @entity {
+enum FeedAddress {
+  _0x321F653eED006AD1C29D174e17d96351BDe22649 # GLP
+  _0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a # GMX
+  _0x82af49447d8a07e3bd95bd0d56f35241523fbab1 # WETH
+}
+
+type Pricefeed @entity {
   id: ID!
-  token: String!
   value: BigInt!
   timestamp: Int!
-  period: PricePeriod!
+
+  feed: FeedAddress!
+  period: IntervalTime!
 }
 
 type Transaction @entity {
@@ -113,8 +116,6 @@ type FeeGmxTrackerTransfer @entity {
   to: String!
   value: BigInt!
 }
-
-
 type FeeGlpTrackerTransfer @entity {
   id: ID!
 
@@ -124,20 +125,22 @@ type FeeGlpTrackerTransfer @entity {
   to: String!
   value: BigInt!
 }
+
 type FeeGlpTrackerClaim @entity {
   id: ID!
   timestamp: Int!
 
   receiver: String!
   amount: BigInt!
+  amountUsd: BigInt!
 }
-
 type FeeGmxTrackerClaim @entity {
   id: ID!
   timestamp: Int!
 
   receiver: String!
   amount: BigInt!
+  amountUsd: BigInt!
 }
 type StakedGlpTrackerClaim @entity {
   id: ID!
@@ -145,14 +148,15 @@ type StakedGlpTrackerClaim @entity {
 
   receiver: String!
   amount: BigInt!
+  amountUsd: BigInt!
 }
-
 type StakedGmxTrackerClaim @entity {
   id: ID!
   timestamp: Int!
 
   receiver: String!
   amount: BigInt!
+  amountUsd: BigInt!
 }
 
 type GmxVester @entity {
@@ -164,25 +168,4 @@ type GmxVester @entity {
   to: String!
   value: BigInt!
 }
-
-type DailyClaimedReward @entity {
-  id: ID!
-  receiver: String!
-
-  timestamp: Int!
-
-  feeGlp: BigInt!
-  feeGlpUsd: BigInt!
-
-  feeGmx: BigInt!
-  feeGmxUsd: BigInt!
-
-  stakeGlp: BigInt!
-  stakeGlpUsd: BigInt!
-  stakeGmx: BigInt!
-  stakeGmxUsd: BigInt!
-
-  totalUsd: BigInt!
-}
-
 

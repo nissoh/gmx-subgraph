@@ -1,114 +1,104 @@
-import { BigInt, Address } from "@graphprotocol/graph-ts"
-
-import {
-  ChainlinkPrice,
-  UniswapPrice
-} from "../generated/schema"
-
-import {
-  BASIS_POINTS_DIVISOR,
-  PRECISION,
-  WETH,
-  BTC,
-  LINK,
-  UNI,
-  USDT,
-  USDC,
-  MIM,
-  SPELL,
-  SUSHI,
-  DAI,
-  GMX,
-  getTokenAmountUsd
-} from "./helpers"
-
-import {
-  AnswerUpdated as AnswerUpdatedEvent
-} from '../generated/ChainlinkAggregatorETH/ChainlinkAggregator'
+import { BigInt, ethereum } from "@graphprotocol/graph-ts"
+import { AnswerUpdated } from '../generated/ChainlinkAggregatorETH/ChainlinkAggregator'
+import { AddLiquidity, RemoveLiquidity } from "../generated/GlpManager/GlpManager"
+import { Pricefeed } from "../generated/schema"
+import { Swap } from '../generated/UniswapPool/UniswapPoolV3'
+import { getTokenAmountUsd, GLP, GMX, intervalUnixTime, NormalizedChainLinkMultiplier, PRECISION, WETH } from "./helpers"
+import { getIntervalId } from "./interval"
 
 
-import {
-  Swap as UniswapSwap
-} from '../generated/UniswapPool/UniswapPoolV3'
 
-function _storeChainlinkPrice(token: string, value: BigInt, timestamp: BigInt): void {
-  let id = token + ":" + timestamp.toString()
-  let entity = new ChainlinkPrice(id)
-  entity.value = value
-  entity.period = "any"
-  entity.token = token
-  entity.timestamp = timestamp.toI32()
-  entity.save()
+function _storePricefeed(event: ethereum.Event, token: string, interval: intervalUnixTime, price: BigInt): void {
+  const intervalID = getIntervalId(interval, event)
+  const id = token + ":" + interval.toString() + ':' + intervalID.toString()
 
-  let totalId = token
-  let totalEntity = new ChainlinkPrice(token)
-  totalEntity.value = value
-  totalEntity.period = "last"
-  totalEntity.token = token
-  totalEntity.timestamp = timestamp.toI32()
-  totalEntity.save()
-}
-
-export function handleAnswerUpdatedBTC(event: AnswerUpdatedEvent): void {
-  _storeChainlinkPrice(BTC, event.params.current, event.block.timestamp)
-}
-
-export function handleAnswerUpdatedETH(event: AnswerUpdatedEvent): void {
-  _storeChainlinkPrice(WETH, event.params.current, event.block.timestamp)
-}
-
-export function handleAnswerUpdatedUNI(event: AnswerUpdatedEvent): void {
-  _storeChainlinkPrice(UNI, event.params.current, event.block.timestamp)
-}
-
-export function handleAnswerUpdatedLINK(event: AnswerUpdatedEvent): void {
-  _storeChainlinkPrice(LINK, event.params.current, event.block.timestamp)
-}
-
-export function handleAnswerUpdatedSPELL(event: AnswerUpdatedEvent): void {
-  _storeChainlinkPrice(SPELL, event.params.current, event.block.timestamp)
-}
-
-export function handleAnswerUpdatedMIM(event: AnswerUpdatedEvent): void {
-  _storeChainlinkPrice(MIM, event.params.current, event.block.timestamp)
-}
-
-export function handleAnswerUpdatedDAI(event: AnswerUpdatedEvent): void {
-  _storeChainlinkPrice(DAI, event.params.current, event.block.timestamp)
-}
-
-export function handleAnswerUpdatedSUSHI(event: AnswerUpdatedEvent): void {
-  _storeChainlinkPrice(SUSHI, event.params.current, event.block.timestamp)
-}
-
-function _storeUniswapPrice(id: string, token: string, price: BigInt, period: string, timestamp: BigInt): void {
-  let entity = UniswapPrice.load(id)
+  let entity = Pricefeed.load(id)
   if (entity == null) {
-    entity = new UniswapPrice(id)
+    entity = new Pricefeed(id)
   }
 
-  entity.timestamp = timestamp.toI32()
   entity.value = price
-  entity.token = token
-  entity.period = period
+  entity.period = '_' + interval.toString()
+  entity.feed = '_' + token
+  entity.timestamp = intervalID * interval
   entity.save()
 }
 
-export function handleUniswapGmxEthSwap(event: UniswapSwap): void {
-  let ethPerGmx = event.params.amount0
-    .times(BigInt.fromI32(10).pow(18))
-    .div(event.params.amount1)
-    .times(BigInt.fromI32(100))
-    .div(BigInt.fromI32(99))
-    .times(BigInt.fromI32(-1))
+// export function handleAnswerUpdatedBTC(event: AnswerUpdatedEvent): void {
+//   _storeChainlinkPrice(BTC, event.params.current, event.block.timestamp)
+// }
 
-  let gmxPrice = getTokenAmountUsd(WETH, ethPerGmx)
 
-  let totalId = GMX
-  _storeUniswapPrice(totalId, GMX, gmxPrice, "last", event.block.timestamp)
 
-  let id = GMX + ":" + event.block.timestamp.toString()
-  _storeUniswapPrice(id, GMX, gmxPrice, "any", event.block.timestamp)
+// export function handleAnswerUpdatedUNI(event: AnswerUpdatedEvent): void {
+//   _storeChainlinkPrice(UNI, event.params.current, event.block.timestamp)
+// }
+
+// export function handleAnswerUpdatedLINK(event: AnswerUpdatedEvent): void {
+//   _storeChainlinkPrice(LINK, event.params.current, event.block.timestamp)
+// }
+
+// export function handleAnswerUpdatedSPELL(event: AnswerUpdatedEvent): void {
+//   _storeChainlinkPrice(SPELL, event.params.current, event.block.timestamp)
+// }
+
+// export function handleAnswerUpdatedMIM(event: AnswerUpdatedEvent): void {
+//   _storeChainlinkPrice(MIM, event.params.current, event.block.timestamp)
+// }
+
+// export function handleAnswerUpdatedDAI(event: AnswerUpdatedEvent): void {
+//   _storeChainlinkPrice(DAI, event.params.current, event.block.timestamp)
+// }
+
+// export function handleAnswerUpdatedSUSHI(event: AnswerUpdatedEvent): void {
+//   _storeChainlinkPrice(SUSHI, event.params.current, event.block.timestamp)
+// }
+
+
+export function handleAnswerUpdatedETH(event: AnswerUpdated): void {
+  const price = event.params.current.times(NormalizedChainLinkMultiplier)
+
+  _storePricefeed(event, WETH, intervalUnixTime.SEC, price)
+  _storePricefeed(event, WETH, intervalUnixTime.MIN15, price)
+  _storePricefeed(event, WETH, intervalUnixTime.MIN60, price)
+  _storePricefeed(event, WETH, intervalUnixTime.HR4, price)
+  _storePricefeed(event, WETH, intervalUnixTime.HR24, price)
+  _storePricefeed(event, WETH, intervalUnixTime.DAY7, price)
+}
+
+export function handleUniswapGmxEthSwap(event: Swap): void {
+  const ethPerGmx = -(event.params.amount0 * BigInt.fromI32(10).pow(18) / event.params.amount1) * BigInt.fromI32(100) / BigInt.fromI32(99)
+  const price = getTokenAmountUsd(WETH, ethPerGmx)
+
+  _storePricefeed(event, GMX, intervalUnixTime.SEC, price)
+  _storePricefeed(event, GMX, intervalUnixTime.MIN15, price)
+  _storePricefeed(event, GMX, intervalUnixTime.MIN60, price)
+  _storePricefeed(event, GMX, intervalUnixTime.HR4, price)
+  _storePricefeed(event, GMX, intervalUnixTime.HR24, price)
+  _storePricefeed(event, GMX, intervalUnixTime.DAY7, price)
 }
 
 
+const glpMultiplier = BigInt.fromI32(10).pow(18)
+
+export function handleAddLiquidity(event: AddLiquidity): void {
+  const price = event.params.aumInUsdg.times(glpMultiplier).div(event.params.glpSupply)
+
+  _storePricefeed(event, GLP, intervalUnixTime.SEC, price)
+  _storePricefeed(event, GLP, intervalUnixTime.MIN15, price)
+  _storePricefeed(event, GLP, intervalUnixTime.MIN60, price)
+  _storePricefeed(event, GLP, intervalUnixTime.HR4, price)
+  _storePricefeed(event, GLP, intervalUnixTime.HR24, price)
+  _storePricefeed(event, GLP, intervalUnixTime.DAY7, price)
+}
+
+export function handleRemoveLiquidity(event: RemoveLiquidity): void {
+  const price = event.params.aumInUsdg.times(glpMultiplier).div(event.params.glpSupply)
+
+  _storePricefeed(event, GLP, intervalUnixTime.SEC, price)
+  _storePricefeed(event, GLP, intervalUnixTime.MIN15, price)
+  _storePricefeed(event, GLP, intervalUnixTime.MIN60, price)
+  _storePricefeed(event, GLP, intervalUnixTime.HR4, price)
+  _storePricefeed(event, GLP, intervalUnixTime.HR24, price)
+  _storePricefeed(event, GLP, intervalUnixTime.DAY7, price)
+}
