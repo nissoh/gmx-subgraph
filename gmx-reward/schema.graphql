@@ -9,9 +9,14 @@ enum IntervalTime {
 
 
 enum FeedAddress {
+  # ARBITRUM
   _0x321F653eED006AD1C29D174e17d96351BDe22649 # GLP
   _0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a # GMX
   _0x82af49447d8a07e3bd95bd0d56f35241523fbab1 # WETH
+
+  # AVALANCHE
+  _0xe1ae4d4b06A5Fe1fc288f6B4CD72f9F8323B107F # GLP
+  _0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7 # AVAX
 }
 
 type PricefeedHistory @entity {

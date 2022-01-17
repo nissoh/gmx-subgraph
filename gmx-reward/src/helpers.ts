@@ -26,41 +26,9 @@ export const FRAX = "0x17fc002b466eec40dae837fc4be5c67993ddbd6f"
 export const DAI = "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"
 export const GMX = "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"
 export const GLP = "0x321F653eED006AD1C29D174e17d96351BDe22649"
+export const GLP_AVALANCHE = "0xe1ae4d4b06A5Fe1fc288f6B4CD72f9F8323B107F"
+export const AVAX = "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7"
 
-
-
-
-// export enum PriceFeedAddress {
-//     WETH = 0x82af49447d8a07e3bd95bd0d56f35241523fbab1,
-//     BTC = 0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f,
-//     LINK = 0xf97f4df75117a78c1a5a0dbb814af92458539fb4,
-//     UNI = 0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0,
-//     USDT = 0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9,
-//     USDC = 0xff970a61a04b1ca14834a43f5de4533ebddb5cc8,
-//     MIM = 0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a,
-//     SPELL = 0x3e6648c5a70a150a88bce65f4ad4d506fe15d2af,
-//     SUSHI = 0xd4d42f0b6def4ce0383636770ef773390d85c61a,
-//     FRAX = 0x17fc002b466eec40dae837fc4be5c67993ddbd6f,
-//     DAI = 0xda10009cbd5d07dd0cecc66161fc93d7c9000da1,
-//     GMX = 0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a,
-//     GLP = 0x321F653eED006AD1C29D174e17d96351BDe22649,
-// }
-
-// export class PriceFeedAddress {
-//   static USDC = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
-//   static USDT = "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f"
-//   static BTC = "0xf97f4df75117a78c1a5a0dbb814af92458539fb4"
-//   static WETH = "0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0"
-//   static LINK = "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9"
-//   static UNI = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8"
-//   static MIM = "0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a"
-//   static SPELL = "0x3e6648c5a70a150a88bce65f4ad4d506fe15d2af"
-//   static SUSHI = "0xd4d42f0b6def4ce0383636770ef773390d85c61a"
-//   static FRAX = "0x17fc002b466eec40dae837fc4be5c67993ddbd6f"
-//   static DAI = "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"
-//   static GMX = "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"
-//   static GLP = "0x321F653eED006AD1C29D174e17d96351BDe22649"
-// }
 
 export enum TokenDecimals {
   USDC = 6,
@@ -120,7 +88,7 @@ export function getTokenPrice(feedAddress: string): BigInt {
   const chainlinkPriceEntity = PricefeedLatest.load(feedAddress)
 
   if (chainlinkPriceEntity == null) {
-    throw new Error(`could not get pricefeed: ${feedAddress}`)
+    return ONE_BD
   }
 
   return chainlinkPriceEntity.value
@@ -169,19 +137,21 @@ export function _createTransactionIfNotExist(event: ethereum.Event): string {
 }
 
 
-export function _storeLatestPricefeed(feedAddress: string, price: BigInt, timestamp: i32): PricefeedLatest {
-  let feed = PricefeedLatest.load(feedAddress)
-  if (feed === null) {
-    feed = new PricefeedLatest(feedAddress)
-    feed.timestamp = timestamp
+
+
+
+export function _changeLatestPricefeed(feedAddress: string, price: BigInt, event: ethereum.Event): PricefeedLatest {
+  let entity = PricefeedLatest.load(feedAddress)
+  if (entity === null) {
+    entity = new PricefeedLatest(feedAddress)
   }
-  feed.value = price
-  feed.save()
 
-  return feed
+  entity.timestamp = event.block.timestamp.toI32()
+  entity.value = price
+  entity.save()
+
+  return entity
 }
-
-
 
 export function _storePricefeed(event: ethereum.Event, feedAddress: string, interval: intervalUnixTime, price: BigInt): void {
   const intervalID = getIntervalId(interval, event)
@@ -211,6 +181,22 @@ export function _storePricefeed(event: ethereum.Event, feedAddress: string, inte
   entity.c = price
 
   entity.save()
+}
+
+
+const glpMultiplier = BigInt.fromI32(10).pow(18)
+
+export function _storeGlpPricefeed(feedAddress: string, event: ethereum.Event, aumInUsdg: BigInt, glpSupply: BigInt): void {
+  const price = glpSupply.equals(ZERO_BI) ? ZERO_BI : aumInUsdg.times(glpMultiplier).div(glpSupply)
+
+  _changeLatestPricefeed(feedAddress, price, event)
+
+  _storePricefeed(event, feedAddress, intervalUnixTime.SEC, price)
+  _storePricefeed(event, feedAddress, intervalUnixTime.MIN15, price)
+  _storePricefeed(event, feedAddress, intervalUnixTime.MIN60, price)
+  _storePricefeed(event, feedAddress, intervalUnixTime.HR4, price)
+  _storePricefeed(event, feedAddress, intervalUnixTime.HR24, price)
+  _storePricefeed(event, feedAddress, intervalUnixTime.DAY7, price)
 }
 
 
