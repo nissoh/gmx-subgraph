@@ -30,7 +30,7 @@ dataSources:
           handler: handleStakeGlp
         - event: UnstakeGlp(address,uint256)
           handler: handleUnstakeGlp
-      file: ./src/mapping.ts
+      file: ./src/mapping-avalanche.ts
 
   - kind: ethereum/contract
     name: StakedGmxTrackerTransfer
@@ -54,7 +54,7 @@ dataSources:
           handler: handleStakedGmxTrackerTransfer
         - event: Claim(address,uint256)
           handler: handleStakedGmxTrackerClaim
-      file: ./src/mapping.ts
+      file: ./src/mapping-avalanche.ts
   - kind: ethereum/contract
     name: StakedGlpTrackerTransfer
     network: avalanche
@@ -77,7 +77,7 @@ dataSources:
           handler: handleStakedGlpTrackerTransfer
         - event: Claim(address,uint256)
           handler: handleStakedGlpTrackerClaim
-      file: ./src/mapping.ts
+      file: ./src/mapping-avalanche.ts
 
   - kind: ethereum/contract
     name: BonusGmxTrackerTransfer
@@ -98,7 +98,7 @@ dataSources:
       eventHandlers:
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleBonusGmxTrackerTransfer
-      file: ./src/mapping.ts
+      file: ./src/mapping-avalanche.ts
 
   - kind: ethereum/contract
     name: FeeGmxTrackerTransfer
@@ -122,7 +122,7 @@ dataSources:
           handler: handleFeeGmxTrackerTransfer
         - event: Claim(address,uint256)
           handler: handleFeeGmxTrackerClaim
-      file: ./src/mapping.ts
+      file: ./src/mapping-avalanche.ts
   - kind: ethereum/contract
     name: FeeGlpTrackerTransfer
     network: avalanche
@@ -145,7 +145,7 @@ dataSources:
           handler: handleFeeGlpTrackerTransfer
         - event: Claim(address,uint256)
           handler: handleFeeGlpTrackerClaim
-      file: ./src/mapping.ts
+      file: ./src/mapping-avalanche.ts
 
   - kind: ethereum/contract
     name: ChainlinkAggregatorAVAX

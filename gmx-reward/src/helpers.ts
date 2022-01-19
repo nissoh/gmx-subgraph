@@ -1,15 +1,15 @@
-import { BigInt, ethereum } from "@graphprotocol/graph-ts"
+import { BigInt, ethereum, log } from "@graphprotocol/graph-ts"
 import { Transaction, PricefeedLatest, PricefeedHistory } from "../generated/schema"
 import { getIntervalId, getIntervalIdentifier } from "./interval"
 
 export const BASIS_POINTS_DIVISOR = BigInt.fromI32(10000)
-export const PRECISION = BigInt.fromI32(10).pow(30)
+export const USD_PRECISION = BigInt.fromI32(10).pow(30)
+export const GLP_PRECISION = BigInt.fromI32(10).pow(12)
 
 export const ZERO_BI = BigInt.fromI32(0)
 export const ONE_BI = BigInt.fromI32(1)
-export const ZERO_BD = BigInt.fromString('0')
-export const ONE_BD = BigInt.fromString('1')
 export const BI_18 = BigInt.fromI32(18)
+export const BI_10 = BigInt.fromI32(10)
 export const NormalizedChainLinkMultiplier = BigInt.fromI32(10).pow(22)
 
 
@@ -25,7 +25,7 @@ export const SUSHI = "0xd4d42f0b6def4ce0383636770ef773390d85c61a"
 export const FRAX = "0x17fc002b466eec40dae837fc4be5c67993ddbd6f"
 export const DAI = "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1"
 export const GMX = "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a"
-export const GLP = "0x321F653eED006AD1C29D174e17d96351BDe22649"
+export const GLP_ARBITRUM = "0x321F653eED006AD1C29D174e17d96351BDe22649"
 export const GLP_AVALANCHE = "0xe1ae4d4b06A5Fe1fc288f6B4CD72f9F8323B107F"
 export const AVAX = "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7"
 
@@ -40,6 +40,7 @@ export enum TokenDecimals {
   MIM = 18,
   SPELL = 18,
   SUSHI = 18,
+  AVAX = 18,
   FRAX = 18,
   DAI = 18,
   GMX = 18,
@@ -70,17 +71,11 @@ export function timestampToDay(timestamp: BigInt): BigInt {
 }
 
 
+export function getByAmoutFromFeed(amount: BigInt, feedAddress: string, decimals: TokenDecimals): BigInt {
+  const priceUsd = getTokenPrice(feedAddress)
+  const denominator = BigInt.fromI32(10).pow(decimals as u8)
 
-export function getEthTokenAmountUsd(amount: BigInt): BigInt {
-  const denominator = BigInt.fromI32(10).pow(18)
-  const price = getTokenPrice(WETH)
-  return amount.times(price).div(denominator)
-}
-
-export function getGmxTokenAmountUsd(amount: BigInt): BigInt {
-  const denominator = BigInt.fromI32(10).pow(18)
-  const price = getTokenPrice(GMX)
-  return amount.times(price).div(denominator)
+  return amount.times(priceUsd).div(denominator)
 }
 
 
@@ -88,54 +83,44 @@ export function getTokenPrice(feedAddress: string): BigInt {
   const chainlinkPriceEntity = PricefeedLatest.load(feedAddress)
 
   if (chainlinkPriceEntity == null) {
-    return ONE_BD
+    log.warning(`Pricefeed doesn't exist: ${feedAddress}`, [])
+    return ONE_BI
   }
 
   return chainlinkPriceEntity.value
-
-  // if (feedAddress === GMX || feedAddress === GLP) {
-  //   return chainlinkPriceEntity.value
-  // }
-
-  // // all chainlink prices have 8 decimals
-  // // adjusting them to fit GMX 30 decimals USD values
-  // return chainlinkPriceEntity.value.times(NormalizedChainLinkMultiplier)
 }
-
 
 
 export function getId(event: ethereum.Event): string {
   return event.transaction.hash.toHexString() + "-" + event.logIndex.toString()
 }
 
-export function _createTransaction(event: ethereum.Event): Transaction {
-  let id = getId(event)
-  let txTo = event.transaction.to
+export function _createTransaction(event: ethereum.Event, id: string): Transaction {
+  const to = event.transaction.to
+  const entity = new Transaction(id)
 
-  let entity = new Transaction(id)
   entity.timestamp = event.block.timestamp.toI32()
   entity.blockNumber = event.block.number.toI32()
   entity.from = event.transaction.from.toHexString()
 
-  entity.to = txTo.toHexString()
+  if (to !== null) {
+    entity.to = to.toHexString()
+  }
 
   return entity
 }
 
-
 export function _createTransactionIfNotExist(event: ethereum.Event): string {
-  let id = event.transaction.hash.toHexString()
+  const id = event.transaction.hash.toHexString()
   let entity = Transaction.load(id)
 
-  let txTo = event.transaction.to
-  if (entity == null && txTo !== null) {
-    entity = _createTransaction(event)
+  if (entity === null) {
+    entity = _createTransaction(event, id)
     entity.save()
   }
 
   return id
 }
-
 
 
 
@@ -187,7 +172,7 @@ export function _storePricefeed(event: ethereum.Event, feedAddress: string, inte
 const glpMultiplier = BigInt.fromI32(10).pow(18)
 
 export function _storeGlpPricefeed(feedAddress: string, event: ethereum.Event, aumInUsdg: BigInt, glpSupply: BigInt): void {
-  const price = glpSupply.equals(ZERO_BI) ? ZERO_BI : aumInUsdg.times(glpMultiplier).div(glpSupply)
+  const price = glpSupply.equals(ZERO_BI) ? ZERO_BI : aumInUsdg.times(glpMultiplier).div(glpSupply).times(GLP_PRECISION)
 
   _changeLatestPricefeed(feedAddress, price, event)
 

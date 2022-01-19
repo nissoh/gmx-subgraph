@@ -1,8 +1,6 @@
-import { ethereum } from "@graphprotocol/graph-ts"
 import * as rewardRouter from "../generated/RewardRouterV2/RewardRouterV2"
 import * as rewardTracker from "../generated/RewardTracker/RewardTracker"
 import {
-  Transaction,
   StakeGmx,
   UnstakeGmx,
   StakeGlp,
@@ -17,41 +15,9 @@ import {
   FeeGmxTrackerClaim,
   FeeGlpTrackerClaim,
 } from "../generated/schema"
-import { getEthTokenAmountUsd, getGmxTokenAmountUsd } from "./helpers"
-// import { getDailyRewardClaim } from "./interval"
+import { AVAX, getId, getByAmoutFromFeed, GLP_AVALANCHE, GMX, _createTransactionIfNotExist, TokenDecimals } from "./helpers"
 
 
-function getId(event: ethereum.Event): string {
-  return event.transaction.hash.toHexString() + "-" + event.logIndex.toString()
-}
-
-function _createTransaction(event: ethereum.Event): Transaction {
-  const id = getId(event)
-  const to = event.transaction.to
-  const entity = new Transaction(id)
-
-  entity.timestamp = event.block.timestamp.toI32()
-  entity.blockNumber = event.block.number.toI32()
-  entity.from = event.transaction.from.toHexString()
-
-  if (to !== null) {
-    entity.to = to.toHexString()
-  }
-
-  return entity
-}
-
-function _createTransactionIfNotExist(event: ethereum.Event): string {
-  const id = event.transaction.hash.toHexString()
-  let entity = Transaction.load(id)
-
-  if (entity == null) {
-    entity = _createTransaction(event)
-    entity.save()
-  }
-
-  return id
-}
 
 export function handleStakeGmx(event: rewardRouter.StakeGmx): void {
   const entity = new StakeGmx(event.transaction.hash.toHexString())
@@ -59,6 +25,7 @@ export function handleStakeGmx(event: rewardRouter.StakeGmx): void {
   entity.account = event.params.account.toHexString()
   entity.token = event.params.token.toHexString()
   entity.amount = event.params.amount
+  entity.amountUsd = getByAmoutFromFeed(event.params.amount, GMX, TokenDecimals.GMX)
 
   entity.transaction = _createTransactionIfNotExist(event)
   entity.timestamp = event.block.timestamp.toI32()
@@ -72,6 +39,7 @@ export function handleUnstakeGmx(event: rewardRouter.UnstakeGmx): void {
   entity.account = event.params.account.toHexString()
   entity.token = event.params.token.toHexString()
   entity.amount = event.params.amount
+  entity.amountUsd = getByAmoutFromFeed(event.params.amount, GMX, TokenDecimals.GMX)
 
   entity.transaction = _createTransactionIfNotExist(event)
   entity.timestamp = event.block.timestamp.toI32()
@@ -84,6 +52,7 @@ export function handleStakeGlp(event: rewardRouter.StakeGlp): void {
 
   entity.account = event.params.account.toHexString()
   entity.amount = event.params.amount
+  entity.amountUsd = getByAmoutFromFeed(event.params.amount, GLP_AVALANCHE, TokenDecimals.GLP)
 
   entity.transaction = _createTransactionIfNotExist(event)
   entity.timestamp = event.block.timestamp.toI32()
@@ -96,6 +65,7 @@ export function handleUnstakeGlp(event: rewardRouter.UnstakeGlp): void {
 
   entity.account = event.params.account.toHexString()
   entity.amount = event.params.amount
+  entity.amountUsd = getByAmoutFromFeed(event.params.amount, GLP_AVALANCHE, TokenDecimals.GLP)
 
   entity.transaction = _createTransactionIfNotExist(event)
   entity.timestamp = event.block.timestamp.toI32()
@@ -170,18 +140,20 @@ export function handleFeeGlpTrackerClaim(event: rewardTracker.Claim): void {
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
-  entity.amountUsd = getEthTokenAmountUsd(event.params.amount)
+  entity.amountUsd = getByAmoutFromFeed(event.params.amount, AVAX, TokenDecimals.AVAX)
+
   entity.timestamp = event.block.timestamp.toI32()
 
   entity.save()
 }
+
 export function handleFeeGmxTrackerClaim(event: rewardTracker.Claim): void {
   const id = getId(event)
   const entity = new FeeGmxTrackerClaim(id)
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
-  entity.amountUsd = getEthTokenAmountUsd(event.params.amount)
+  entity.amountUsd = getByAmoutFromFeed(event.params.amount, AVAX, TokenDecimals.AVAX)
   entity.timestamp = event.block.timestamp.toI32()
 
   entity.save()
@@ -193,7 +165,7 @@ export function handleStakedGlpTrackerClaim(event: rewardTracker.Claim): void {
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
-  entity.amountUsd = getGmxTokenAmountUsd(event.params.amount)
+  entity.amountUsd = getByAmoutFromFeed(event.params.amount, GLP_AVALANCHE, TokenDecimals.GLP)
   entity.timestamp = event.block.timestamp.toI32()
 
   entity.save()
@@ -205,7 +177,7 @@ export function handleStakedGmxTrackerClaim(event: rewardTracker.Claim): void {
 
   entity.receiver = event.params.receiver.toHexString()
   entity.amount = event.params.amount
-  entity.amountUsd = getGmxTokenAmountUsd(event.params.amount)
+  entity.amountUsd = getByAmoutFromFeed(event.params.amount, GMX, TokenDecimals.GMX)
   entity.timestamp = event.block.timestamp.toI32()
 
   entity.save()

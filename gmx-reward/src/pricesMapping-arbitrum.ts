@@ -2,7 +2,7 @@ import { BigInt } from "@graphprotocol/graph-ts"
 import { AnswerUpdated } from '../generated/ChainlinkAggregatorETH/ChainlinkAggregator'
 import { AddLiquidity, RemoveLiquidity } from "../generated/GlpManager/GlpManager"
 import { Swap } from '../generated/UniswapPool/UniswapPoolV3'
-import { AVAX, getEthTokenAmountUsd, GLP, GMX, intervalUnixTime, NormalizedChainLinkMultiplier, WETH, _changeLatestPricefeed, _storeGlpPricefeed, _storePricefeed } from "./helpers"
+import { BI_10, getByAmoutFromFeed, GLP_ARBITRUM, GMX, intervalUnixTime, NormalizedChainLinkMultiplier, TokenDecimals, WETH, _changeLatestPricefeed, _storeGlpPricefeed, _storePricefeed } from "./helpers"
 
 export function handleAnswerUpdatedETH(event: AnswerUpdated): void {
   const price = event.params.current.times(NormalizedChainLinkMultiplier)
@@ -18,9 +18,10 @@ export function handleAnswerUpdatedETH(event: AnswerUpdated): void {
 }
 
 export function handleUniswapGmxEthSwap(event: Swap): void {
-  const ethPerGmx = -(event.params.amount0 * BigInt.fromI32(10).pow(18) / event.params.amount1) * BigInt.fromI32(100) / BigInt.fromI32(99)
-  const price = getEthTokenAmountUsd(ethPerGmx)
-  
+  const ethPerGmx = event.params.amount0.times(BI_10.pow(18)).div(event.params.amount1)
+  const gmxPriceUsd = ethPerGmx.times(BigInt.fromI32(100)).div(BigInt.fromI32(99)).abs()
+  const price = getByAmoutFromFeed(gmxPriceUsd, WETH, TokenDecimals.WETH)
+
   _changeLatestPricefeed(GMX, price, event)
 
   _storePricefeed(event, GMX, intervalUnixTime.SEC, price)
@@ -34,11 +35,11 @@ export function handleUniswapGmxEthSwap(event: Swap): void {
 
 
 export function handleAddLiquidity(event: AddLiquidity): void {
-  _storeGlpPricefeed(GLP, event, event.params.aumInUsdg, event.params.glpSupply)
+  _storeGlpPricefeed(GLP_ARBITRUM, event, event.params.aumInUsdg, event.params.glpSupply)
 }
 
 export function handleRemoveLiquidity(event: RemoveLiquidity): void {
-  _storeGlpPricefeed(GLP, event, event.params.aumInUsdg, event.params.glpSupply)
+  _storeGlpPricefeed(GLP_ARBITRUM, event, event.params.aumInUsdg, event.params.glpSupply)
 }
 
 

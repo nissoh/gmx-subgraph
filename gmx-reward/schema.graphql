@@ -52,6 +52,7 @@ type StakeGmx @entity {
   account: String!
   token: String!
   amount: BigInt!
+  amountUsd: BigInt!
 
   transaction: Transaction!
   timestamp: Int!
@@ -63,6 +64,7 @@ type UnstakeGmx @entity {
   account: String!
   token: String!
   amount: BigInt!
+  amountUsd: BigInt!
 
   transaction: Transaction!
   timestamp: Int!
@@ -73,6 +75,7 @@ type StakeGlp @entity {
 
   account: String!
   amount: BigInt!
+  amountUsd: BigInt!
 
   transaction: Transaction!
   timestamp: Int!
@@ -83,6 +86,7 @@ type UnstakeGlp @entity {
 
   account: String!
   amount: BigInt!
+  amountUsd: BigInt!
 
   transaction: Transaction!
   timestamp: Int!

@@ -3,7 +3,6 @@
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen subgraph.arbitrum.yaml && graph codegen subgraph.avalanche.yaml",
-    "build": "graph build",
     "deploy-arbitrum": "graph deploy --product hosted-service nissoh/gmx-rewards subgraph.arbitrum.yaml",
     "deploy-avalanche": "graph deploy --product hosted-service nissoh/gmx-stats-avalanche subgraph.avalanche.yaml",
     "deploy-test": "graph deploy --product hosted-service gkrasulya/gmx-raw --deploy-key $(cat .access_token)"
