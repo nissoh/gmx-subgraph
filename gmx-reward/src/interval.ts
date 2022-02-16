@@ -1,11 +1,10 @@
-import { ethereum, BigInt } from "@graphprotocol/graph-ts"
+import { ethereum } from "@graphprotocol/graph-ts"
 import { intervalUnixTime } from "./helpers"
 
-export const ZERO_BI = BigInt.fromI32(0)
 
-export function getIntervalIdentifier(event: ethereum.Event, token: string, interval: intervalUnixTime): string {
+export function getIntervalIdentifier(event: ethereum.Event, name: string, interval: intervalUnixTime): string {
   const intervalID = getIntervalId(interval, event)
-  return token + ":" + interval.toString() + ':' + intervalID.toString()
+  return name + ":" + interval.toString() + ':' + intervalID.toString()
 }
 
 export function getIntervalId(interval: intervalUnixTime, event: ethereum.Event): i32 {

@@ -1,9 +1,9 @@
 import { AnswerUpdated } from '../generated/ChainlinkAggregatorETH/ChainlinkAggregator'
 import { AddLiquidity, RemoveLiquidity } from "../generated/GlpManager/GlpManager"
-import { AVAX, GLP_AVALANCHE, intervalUnixTime, NormalizedChainLinkMultiplier, _changeLatestPricefeed, _storeGlpPricefeed, _storePricefeed } from "./helpers"
+import { AVAX, BI_22_PRECISION, GLP_AVALANCHE, intervalUnixTime, _changeLatestPricefeed, _storeGlpPricefeed, _storePricefeed } from "./helpers"
 
 export function handleAnswerUpdatedAVAX(event: AnswerUpdated): void {
-  const price = event.params.current.times(NormalizedChainLinkMultiplier)
+  const price = event.params.current.times(BI_22_PRECISION)
 
   _changeLatestPricefeed(AVAX, price, event)
 

@@ -1,11 +1,10 @@
-import { BigInt } from "@graphprotocol/graph-ts"
 import { AnswerUpdated } from '../generated/ChainlinkAggregatorETH/ChainlinkAggregator'
 import { AddLiquidity, RemoveLiquidity } from "../generated/GlpManager/GlpManager"
 import { Swap } from '../generated/UniswapPool/UniswapPoolV3'
-import { BI_10, getByAmoutFromFeed, GLP_ARBITRUM, GMX, intervalUnixTime, NormalizedChainLinkMultiplier, TokenDecimals, WETH, _changeLatestPricefeed, _storeGlpPricefeed, _storePricefeed } from "./helpers"
+import { BTC, getByAmoutFromFeed, GLP_ARBITRUM, GMX, intervalUnixTime, LINK, BI_22_PRECISION, TokenDecimals, UNI, WETH, _changeLatestPricefeed, _storeGlpPricefeed, _storePricefeed, BI_18_PRECISION } from "./helpers"
 
 export function handleAnswerUpdatedETH(event: AnswerUpdated): void {
-  const price = event.params.current.times(NormalizedChainLinkMultiplier)
+  const price = event.params.current.times(BI_22_PRECISION)
 
   _changeLatestPricefeed(WETH, price, event)
 
@@ -17,19 +16,57 @@ export function handleAnswerUpdatedETH(event: AnswerUpdated): void {
   _storePricefeed(event, WETH, intervalUnixTime.DAY7, price)
 }
 
+export function handleAnswerUpdatedBTC(event: AnswerUpdated): void {
+  const price = event.params.current.times(BI_22_PRECISION)
+
+  _changeLatestPricefeed(BTC, price, event)
+
+  _storePricefeed(event, BTC, intervalUnixTime.SEC, price)
+  _storePricefeed(event, BTC, intervalUnixTime.MIN15, price)
+  _storePricefeed(event, BTC, intervalUnixTime.MIN60, price)
+  _storePricefeed(event, BTC, intervalUnixTime.HR4, price)
+  _storePricefeed(event, BTC, intervalUnixTime.HR24, price)
+  _storePricefeed(event, BTC, intervalUnixTime.DAY7, price)
+}
+
+export function handleAnswerUpdatedLINK(event: AnswerUpdated): void {
+  const price = event.params.current.times(BI_22_PRECISION)
+
+  _changeLatestPricefeed(LINK, price, event)
+
+  _storePricefeed(event, LINK, intervalUnixTime.SEC, price)
+  _storePricefeed(event, LINK, intervalUnixTime.MIN15, price)
+  _storePricefeed(event, LINK, intervalUnixTime.MIN60, price)
+  _storePricefeed(event, LINK, intervalUnixTime.HR4, price)
+  _storePricefeed(event, LINK, intervalUnixTime.HR24, price)
+  _storePricefeed(event, LINK, intervalUnixTime.DAY7, price)
+}
+
+export function handleAnswerUpdatedUNI(event: AnswerUpdated): void {
+  const price = event.params.current.times(BI_22_PRECISION)
+
+  _changeLatestPricefeed(UNI, price, event)
+
+  _storePricefeed(event, UNI, intervalUnixTime.SEC, price)
+  _storePricefeed(event, UNI, intervalUnixTime.MIN15, price)
+  _storePricefeed(event, UNI, intervalUnixTime.MIN60, price)
+  _storePricefeed(event, UNI, intervalUnixTime.HR4, price)
+  _storePricefeed(event, UNI, intervalUnixTime.HR24, price)
+  _storePricefeed(event, UNI, intervalUnixTime.DAY7, price)
+}
+
 export function handleUniswapGmxEthSwap(event: Swap): void {
-  const ethPerGmx = event.params.amount0.times(BI_10.pow(18)).div(event.params.amount1)
-  const gmxPriceUsd = ethPerGmx.times(BigInt.fromI32(100)).div(BigInt.fromI32(99)).abs()
-  const price = getByAmoutFromFeed(gmxPriceUsd, WETH, TokenDecimals.WETH)
+  const ethPerGmx = event.params.amount0.times(BI_18_PRECISION).div(event.params.amount1)
+  const priceUsd = getByAmoutFromFeed(ethPerGmx, WETH, TokenDecimals.WETH)
 
-  _changeLatestPricefeed(GMX, price, event)
+  _changeLatestPricefeed(GMX, priceUsd, event)
 
-  _storePricefeed(event, GMX, intervalUnixTime.SEC, price)
-  _storePricefeed(event, GMX, intervalUnixTime.MIN15, price)
-  _storePricefeed(event, GMX, intervalUnixTime.MIN60, price)
-  _storePricefeed(event, GMX, intervalUnixTime.HR4, price)
-  _storePricefeed(event, GMX, intervalUnixTime.HR24, price)
-  _storePricefeed(event, GMX, intervalUnixTime.DAY7, price)
+  _storePricefeed(event, GMX, intervalUnixTime.SEC, priceUsd)
+  _storePricefeed(event, GMX, intervalUnixTime.MIN15, priceUsd)
+  _storePricefeed(event, GMX, intervalUnixTime.MIN60, priceUsd)
+  _storePricefeed(event, GMX, intervalUnixTime.HR4, priceUsd)
+  _storePricefeed(event, GMX, intervalUnixTime.HR24, priceUsd)
+  _storePricefeed(event, GMX, intervalUnixTime.DAY7, priceUsd)
 }
 
 
@@ -42,37 +79,4 @@ export function handleRemoveLiquidity(event: RemoveLiquidity): void {
   _storeGlpPricefeed(GLP_ARBITRUM, event, event.params.aumInUsdg, event.params.glpSupply)
 }
 
-
-
-
-
-// export function handleAnswerUpdatedBTC(event: AnswerUpdatedEvent): void {
-//   _storeChainlinkPrice(BTC, event.params.current, event.block.timestamp)
-// }
-
-
-
-// export function handleAnswerUpdatedUNI(event: AnswerUpdatedEvent): void {
-//   _storeChainlinkPrice(UNI, event.params.current, event.block.timestamp)
-// }
-
-// export function handleAnswerUpdatedLINK(event: AnswerUpdatedEvent): void {
-//   _storeChainlinkPrice(LINK, event.params.current, event.block.timestamp)
-// }
-
-// export function handleAnswerUpdatedSPELL(event: AnswerUpdatedEvent): void {
-//   _storeChainlinkPrice(SPELL, event.params.current, event.block.timestamp)
-// }
-
-// export function handleAnswerUpdatedMIM(event: AnswerUpdatedEvent): void {
-//   _storeChainlinkPrice(MIM, event.params.current, event.block.timestamp)
-// }
-
-// export function handleAnswerUpdatedDAI(event: AnswerUpdatedEvent): void {
-//   _storeChainlinkPrice(DAI, event.params.current, event.block.timestamp)
-// }
-
-// export function handleAnswerUpdatedSUSHI(event: AnswerUpdatedEvent): void {
-//   _storeChainlinkPrice(SUSHI, event.params.current, event.block.timestamp)
-// }
 
